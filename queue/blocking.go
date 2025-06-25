@@ -7,7 +7,7 @@ import (
 )
 
 // BlockingQueue represents a thread-safe, blocking queue.
-type BlockingQueue[T comparable] interface {
+type BlockingQueue[T any] interface {
 	// OfferWait adds an element to the queue, blocking if the queue is full.
 	OfferWait(elem T)
 	// Offer adds an element to the queue without blocking. Returns an error if the queue is full.
@@ -26,8 +26,6 @@ type BlockingQueue[T comparable] interface {
 	PeekWait() T
 	// Size returns the number of elements in the queue.
 	Size() int
-	// Contains checks if the queue contains the specified element.
-	Contains(elem T) bool
 	// IsEmpty returns true if the queue contains no elements.
 	IsEmpty() bool
 	// MarshalJSON implements the json.Marshaler interface.
@@ -35,7 +33,7 @@ type BlockingQueue[T comparable] interface {
 }
 
 // NewBlockingQueue creates and returns a new BlockingQueue.
-func NewBlockingQueue[T comparable](initItems []T, opts ...Option) BlockingQueue[T] {
+func NewBlockingQueue[T any](initItems []T, opts ...Option) BlockingQueue[T] {
 	configs := Config{
 		Capacity: math.MaxInt,
 	}
@@ -63,7 +61,7 @@ func NewBlockingQueue[T comparable](initItems []T, opts ...Option) BlockingQueue
 	return queue
 }
 
-type blockingQueue[T comparable] struct {
+type blockingQueue[T any] struct {
 	items    []T
 	capacity int
 
@@ -180,18 +178,6 @@ func (bq *blockingQueue[T]) Size() int {
 	defer bq.lock.RUnlock()
 
 	return len(bq.items)
-}
-
-func (bq *blockingQueue[T]) Contains(elem T) bool {
-	bq.lock.RLock()
-	defer bq.lock.RUnlock()
-
-	for _, e := range bq.items {
-		if e == elem {
-			return true
-		}
-	}
-	return false
 }
 
 func (bq *blockingQueue[T]) IsEmpty() bool {
