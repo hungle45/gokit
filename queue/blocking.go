@@ -2,9 +2,10 @@ package queue
 
 import (
 	"encoding/json"
-	"math"
 	"sync"
 )
+
+const DefaultBlockingQueueCapacity = 10
 
 // BlockingQueue represents a thread-safe, blocking queue.
 type BlockingQueue[T any] interface {
@@ -35,7 +36,7 @@ type BlockingQueue[T any] interface {
 // NewBlockingQueue creates and returns a new BlockingQueue.
 func NewBlockingQueue[T any](initItems []T, opts ...Option) BlockingQueue[T] {
 	configs := Config{
-		Capacity: math.MaxInt,
+		Capacity: DefaultBlockingQueueCapacity,
 	}
 
 	for _, opt := range opts {
@@ -70,7 +71,7 @@ type blockingQueue[T any] struct {
 	notFull  *sync.Cond
 }
 
-func (bq *blockingQueue[T]) OfferWait(elem T) {
+func (bq *blockingQueue[T]) OfferWait(item T) {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
@@ -78,11 +79,11 @@ func (bq *blockingQueue[T]) OfferWait(elem T) {
 		bq.notFull.Wait()
 	}
 
-	bq.items = append(bq.items, elem)
+	bq.items = append(bq.items, item)
 	bq.notEmpty.Signal()
 }
 
-func (bq *blockingQueue[T]) Offer(elem T) error {
+func (bq *blockingQueue[T]) Offer(item T) error {
 	bq.lock.Lock()
 	defer bq.lock.Unlock()
 
@@ -90,7 +91,7 @@ func (bq *blockingQueue[T]) Offer(elem T) error {
 		return ErrQueueIsFull
 	}
 
-	bq.items = append(bq.items, elem)
+	bq.items = append(bq.items, item)
 	bq.notEmpty.Signal()
 
 	return nil
@@ -156,7 +157,7 @@ func (bq *blockingQueue[T]) Peek() (v T, err error) {
 	defer bq.lock.RUnlock()
 
 	if bq.isEmpty() {
-		return v, ErrNoElementsAvailable
+		return v, ErrQueueIsEmpty
 	}
 
 	return bq.items[0], nil
@@ -208,7 +209,7 @@ func (bq *blockingQueue[T]) isFull() bool {
 
 func (bq *blockingQueue[T]) get() (v T, err error) {
 	if bq.isEmpty() {
-		return v, ErrNoElementsAvailable
+		return v, ErrQueueIsEmpty
 	}
 
 	elem := bq.items[0]

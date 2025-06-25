@@ -22,10 +22,10 @@ type Future[T any] interface {
 type FutureTask[R any] struct {
 	ctx      context.Context
 	callback func(value R, err error)
-	callable Callable[R]
+	callable Supplier[R]
 }
 
-func NewFutureTask[R any](ctx context.Context, callable Callable[R]) *FutureTask[R] {
+func NewFutureTask[R any](ctx context.Context, callable Supplier[R]) *FutureTask[R] {
 	childCtx, cancel := context.WithCancelCause(ctx)
 	return &FutureTask[R]{
 		ctx:      childCtx,
@@ -43,9 +43,13 @@ func (f *FutureTask[R]) Done() <-chan struct{} {
 	return f.ctx.Done()
 }
 
+func (f *FutureTask[R]) IsDone() bool {
+	return f.ctx.Err() != nil
+}
+
 func (f *FutureTask[R]) GetWithTimeOut(timeout time.Duration) (R, error) {
 	select {
-	case <-f.ctx.Done():
+	case <-f.Done():
 		return f.Get()
 	case <-time.After(timeout):
 		var zero R
@@ -54,7 +58,7 @@ func (f *FutureTask[R]) GetWithTimeOut(timeout time.Duration) (R, error) {
 }
 
 func (f *FutureTask[R]) Get() (R, error) {
-	<-f.ctx.Done()
+	<-f.Done()
 
 	cause := context.Cause(f.ctx)
 	if cause != nil {
@@ -69,9 +73,23 @@ func (f *FutureTask[R]) Get() (R, error) {
 }
 
 func (f *FutureTask[R]) Run() {
+	if f.IsDone() {
+		return
+	}
 	result, err := f.invoke()
 	f.callback(result, err)
-	return
+}
+
+func (f *FutureTask[R]) Cancel() {
+	f.CancelWithErr(ErrTaskCancelled)
+}
+
+func (f *FutureTask[R]) CancelWithErr(err error) {
+	if f.IsDone() {
+		return
+	}
+	var zero R
+	f.callback(zero, err)
 }
 
 func (f *FutureTask[R]) invoke() (result R, err error) {

@@ -2,8 +2,14 @@ package worker
 
 type Void struct{}
 
-type Runnable func() error
+var Empty = Void{}
 
-type Callable[R any] func() (R, error)
+type Runner interface {
+	Run()
+}
+
+type Function func() error
+
+type Supplier[R any] func() (R, error)
 
 type Callback[T any] func(T, error)
