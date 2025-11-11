@@ -3,10 +3,11 @@ package worker
 import (
 	"context"
 	"errors"
-	"github.com/hungle45/gokit/queue"
 	"math"
 	"sync"
 	"sync/atomic"
+
+	"github.com/hungle45/gokit/queue"
 )
 
 const DefaultQueueSize = 10
