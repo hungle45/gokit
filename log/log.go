@@ -68,6 +68,28 @@ var LogEncoderMap = map[string]zapcore.Encoder{
 	ConsoleEncoderName: zapcore.NewConsoleEncoder(DefaultEncoderConfig),
 }
 
+// Re-export zap field constructors
+var (
+	Any        = zap.Any
+	Bool       = zap.Bool
+	Duration   = zap.Duration
+	Float64    = zap.Float64
+	Int        = zap.Int
+	Int64      = zap.Int64
+	Skip       = zap.Skip
+	String     = zap.String
+	Strings    = zap.Strings
+	Stringer   = zap.Stringer
+	Time       = zap.Time
+	Uint       = zap.Uint
+	Uint32     = zap.Uint32
+	Uint64     = zap.Uint64
+	Uintptr    = zap.Uintptr
+	ByteString = zap.ByteString
+	Error      = zap.Error
+	Reflect    = zap.Reflect
+)
+
 var (
 	initOnce sync.Once
 )
